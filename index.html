@@ -69,7 +69,9 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 100;
         }
 
@@ -507,6 +509,21 @@
             gameRunning = false;
             finalScoreDisplay.textContent = score;
             gameOverScreen.style.display = 'flex';
+
+            // Restart preview animation behind game over screen
+            hearts = [];
+            previewRunning = true;
+            previewLastSpawn = Date.now();
+            for (let i = 0; i < 4; i++) {
+                setTimeout(() => {
+                    if (previewRunning) {
+                        const heart = new Heart();
+                        heart.y = Math.random() * (height * 0.6);
+                        hearts.push(heart);
+                    }
+                }, i * 300);
+            }
+            previewLoop();
         }
 
         function startGame() {
@@ -631,6 +648,54 @@
         document.body.addEventListener('touchmove', (e) => {
             if (gameRunning) e.preventDefault();
         }, { passive: false });
+
+        // Preview animation for start screen
+        let previewRunning = true;
+        let previewLastSpawn = Date.now();
+
+        function previewLoop() {
+            if (!previewRunning) return;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Spawn preview hearts
+            const now = Date.now();
+            if (now - previewLastSpawn > 1500 && hearts.length < 6) {
+                hearts.push(new Heart());
+                previewLastSpawn = now;
+            }
+
+            // Update and draw hearts
+            hearts = hearts.filter(heart => {
+                const alive = heart.update();
+                if (alive) heart.draw();
+                return alive;
+            });
+
+            // Draw bow in resting position
+            drawBow();
+
+            requestAnimationFrame(previewLoop);
+        }
+
+        // Start preview animation
+        for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+                if (previewRunning) {
+                    const heart = new Heart();
+                    heart.y = Math.random() * (height * 0.6);
+                    hearts.push(heart);
+                }
+            }, i * 300);
+        }
+        previewLoop();
+
+        // Modify startGame to stop preview
+        const originalStartGame = startGame;
+        startGame = function() {
+            previewRunning = false;
+            originalStartGame();
+        };
     </script>
 </body>
 </html>
