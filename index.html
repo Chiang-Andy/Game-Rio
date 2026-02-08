@@ -193,7 +193,9 @@
         let score = 0;
         let arrows = 10;
         let hearts = [];
+        let blueHearts = [];
         let roses = [];
+        let pinkFlowers = [];
         let arrowPickups = [];
         let flyingArrows = [];
         let particles = [];
@@ -203,9 +205,13 @@
         let bowPosition = { x: 0, y: 0 };
         let gameRunning = false;
         let lastHeartSpawn = 0;
-        let heartSpawnInterval = 2000;
+        let heartSpawnInterval = 2500;
+        let lastBlueHeartSpawn = 0;
+        let blueHeartSpawnInterval = 6000;
         let lastRoseSpawn = 0;
         let roseSpawnInterval = 5000;
+        let lastPinkFlowerSpawn = 0;
+        let pinkFlowerSpawnInterval = 4000;
         let lastBundleSpawn = 0;
         let bundleSpawnInterval = 4000;
 
@@ -274,6 +280,78 @@
             }
         }
 
+        class BlueHeart {
+            constructor() {
+                this.size = 30 + Math.random() * 15;
+                this.x = Math.random() * (width - this.size * 2) + this.size;
+                this.y = -this.size;
+                this.speedY = 0.8 + Math.random() * 1;
+                this.speedX = (Math.random() - 0.5) * 1.5;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.025 + Math.random() * 0.02;
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.04;
+                this.points = 20;
+                this.glow = 0;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * 0.6 + this.speedX;
+                this.rotation += this.rotationSpeed;
+                this.glow += 0.1;
+
+                if (this.x < this.size) this.x = this.size;
+                if (this.x > width - this.size) this.x = width - this.size;
+
+                return this.y < height + this.size;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.scale(this.size / 30, this.size / 30);
+
+                // Glow effect
+                ctx.shadowColor = '#00BFFF';
+                ctx.shadowBlur = 15 + Math.sin(this.glow) * 5;
+
+                // Blue heart
+                ctx.fillStyle = '#1E90FF';
+                ctx.beginPath();
+                ctx.moveTo(0, -10);
+                ctx.bezierCurveTo(-15, -25, -30, -5, 0, 20);
+                ctx.bezierCurveTo(30, -5, 15, -25, 0, -10);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+
+                // Inner lighter blue
+                ctx.fillStyle = '#00BFFF';
+                ctx.beginPath();
+                ctx.moveTo(0, -6);
+                ctx.bezierCurveTo(-10, -18, -20, -3, 0, 14);
+                ctx.bezierCurveTo(20, -3, 10, -18, 0, -6);
+                ctx.fill();
+
+                // Highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.ellipse(-8, -8, 5, 4, -0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            contains(x, y) {
+                const dx = x - this.x;
+                const dy = y - this.y;
+                return Math.sqrt(dx * dx + dy * dy) < this.size;
+            }
+        }
+
         class Rose {
             constructor() {
                 this.size = 30 + Math.random() * 15;
@@ -304,70 +382,54 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.rotation);
-                ctx.scale(this.size / 35, this.size / 35);
+                ctx.font = `${this.size * 1.5}px serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🌹', 0, 0);
+                ctx.restore();
+            }
 
-                // Stem
-                ctx.strokeStyle = '#228B22';
-                ctx.lineWidth = 4;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(0, 10);
-                ctx.quadraticCurveTo(5, 25, 2, 40);
-                ctx.stroke();
+            contains(x, y) {
+                const dx = x - this.x;
+                const dy = y - this.y;
+                return Math.sqrt(dx * dx + dy * dy) < this.size;
+            }
+        }
 
-                // Leaf on stem
-                ctx.fillStyle = '#32CD32';
-                ctx.beginPath();
-                ctx.moveTo(2, 28);
-                ctx.quadraticCurveTo(18, 20, 20, 28);
-                ctx.quadraticCurveTo(18, 36, 2, 32);
-                ctx.fill();
+        class PinkFlower {
+            constructor() {
+                this.size = 28 + Math.random() * 12;
+                this.x = Math.random() * (width - this.size * 2) + this.size;
+                this.y = -this.size;
+                this.speedY = 0.8 + Math.random() * 1;
+                this.speedX = (Math.random() - 0.5) * 1.2;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.025 + Math.random() * 0.02;
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.04;
+                this.points = 15;
+            }
 
-                // Sepals (green base of flower)
-                ctx.fillStyle = '#228B22';
-                ctx.beginPath();
-                ctx.moveTo(-8, 8);
-                ctx.quadraticCurveTo(-5, -2, 0, 5);
-                ctx.quadraticCurveTo(5, -2, 8, 8);
-                ctx.quadraticCurveTo(0, 12, -8, 8);
-                ctx.fill();
+            update() {
+                this.y += this.speedY;
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * 0.5 + this.speedX;
+                this.rotation += this.rotationSpeed;
 
-                // Rose bloom - outer petals
-                ctx.fillStyle = '#DC143C';
-                ctx.beginPath();
-                ctx.moveTo(0, -18);
-                ctx.quadraticCurveTo(-18, -15, -15, 0);
-                ctx.quadraticCurveTo(-12, 8, 0, 5);
-                ctx.quadraticCurveTo(12, 8, 15, 0);
-                ctx.quadraticCurveTo(18, -15, 0, -18);
-                ctx.fill();
+                if (this.x < this.size) this.x = this.size;
+                if (this.x > width - this.size) this.x = width - this.size;
 
-                // Inner petals - spiral effect
-                ctx.fillStyle = '#B22222';
-                ctx.beginPath();
-                ctx.moveTo(0, -14);
-                ctx.quadraticCurveTo(-12, -10, -10, -2);
-                ctx.quadraticCurveTo(-6, 4, 0, 2);
-                ctx.quadraticCurveTo(6, 4, 10, -2);
-                ctx.quadraticCurveTo(12, -10, 0, -14);
-                ctx.fill();
+                return this.y < height + this.size;
+            }
 
-                // Center swirl
-                ctx.fillStyle = '#8B0000';
-                ctx.beginPath();
-                ctx.moveTo(0, -10);
-                ctx.quadraticCurveTo(-6, -6, -5, -2);
-                ctx.quadraticCurveTo(-2, 1, 2, -1);
-                ctx.quadraticCurveTo(5, -4, 4, -8);
-                ctx.quadraticCurveTo(2, -11, 0, -10);
-                ctx.fill();
-
-                // Highlight
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.beginPath();
-                ctx.ellipse(-5, -10, 3, 2, -0.5, 0, Math.PI * 2);
-                ctx.fill();
-
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.font = `${this.size * 1.5}px serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🌸', 0, 0);
                 ctx.restore();
             }
 
@@ -617,40 +679,38 @@
             ctx.lineTo(stringEndX2, stringEndY2);
             ctx.stroke();
 
-            // Arrow on bow when aiming
-            if (isAiming && pullBack > 10) {
-                ctx.rotate(-Math.PI / 2);
-                ctx.strokeStyle = '#8B4513';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(stringPull - 10, 0);
-                ctx.lineTo(stringPull + 40, 0);
-                ctx.stroke();
+            // Arrow on bow (always visible)
+            ctx.rotate(-Math.PI / 2);
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(stringPull - 10, 0);
+            ctx.lineTo(stringPull + 40, 0);
+            ctx.stroke();
 
-                // Arrow head pointing outward
-                ctx.fillStyle = '#c44569';
-                ctx.beginPath();
-                ctx.moveTo(stringPull + 45, 0);
-                ctx.lineTo(stringPull + 35, -5);
-                ctx.lineTo(stringPull + 35, 5);
-                ctx.closePath();
-                ctx.fill();
+            // Arrow head pointing outward
+            ctx.fillStyle = '#c44569';
+            ctx.beginPath();
+            ctx.moveTo(stringPull + 45, 0);
+            ctx.lineTo(stringPull + 35, -5);
+            ctx.lineTo(stringPull + 35, 5);
+            ctx.closePath();
+            ctx.fill();
 
-                // Feathers at the back
-                ctx.fillStyle = '#f8a5c2';
-                ctx.beginPath();
-                ctx.moveTo(stringPull - 10, 0);
-                ctx.lineTo(stringPull - 2, -6);
-                ctx.lineTo(stringPull + 5, 0);
-                ctx.closePath();
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(stringPull - 10, 0);
-                ctx.lineTo(stringPull - 2, 6);
-                ctx.lineTo(stringPull + 5, 0);
-                ctx.closePath();
-                ctx.fill();
-            }
+            // Feathers at the back
+            ctx.fillStyle = '#f8a5c2';
+            ctx.beginPath();
+            ctx.moveTo(stringPull - 10, 0);
+            ctx.lineTo(stringPull - 2, -6);
+            ctx.lineTo(stringPull + 5, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(stringPull - 10, 0);
+            ctx.lineTo(stringPull - 2, 6);
+            ctx.lineTo(stringPull + 5, 0);
+            ctx.closePath();
+            ctx.fill();
 
             ctx.restore();
         }
@@ -690,14 +750,26 @@
         }
 
         function spawnHeart() {
-            if (hearts.length < 8) {
+            if (hearts.length < 5) {
                 hearts.push(new Heart());
             }
         }
 
+        function spawnBlueHeart() {
+            if (blueHearts.length < 2) {
+                blueHearts.push(new BlueHeart());
+            }
+        }
+
         function spawnRose() {
-            if (roses.length < 3) {
+            if (roses.length < 2) {
                 roses.push(new Rose());
+            }
+        }
+
+        function spawnPinkFlower() {
+            if (pinkFlowers.length < 3) {
+                pinkFlowers.push(new PinkFlower());
             }
         }
 
@@ -721,7 +793,21 @@
                         arrow.active = false;
                         score += 10;
                         scoreDisplay.textContent = `Score: ${score}`;
-                        heartSpawnInterval = Math.max(800, 2000 - score * 10);
+                        heartSpawnInterval = Math.max(1200, 2500 - score * 8);
+                        break;
+                    }
+                }
+                if (!arrow.active) continue;
+
+                // Check blue hearts (more points!)
+                for (let j = blueHearts.length - 1; j >= 0; j--) {
+                    const blueHeart = blueHearts[j];
+                    if (blueHeart.contains(arrow.x, arrow.y)) {
+                        createParticles(blueHeart.x, blueHeart.y, 200, 25); // Blue particles
+                        blueHearts.splice(j, 1);
+                        arrow.active = false;
+                        score += 20;
+                        scoreDisplay.textContent = `Score: ${score}`;
                         break;
                     }
                 }
@@ -735,6 +821,20 @@
                         roses.splice(j, 1);
                         arrow.active = false;
                         score += 25;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        break;
+                    }
+                }
+                if (!arrow.active) continue;
+
+                // Check pink flowers
+                for (let j = pinkFlowers.length - 1; j >= 0; j--) {
+                    const flower = pinkFlowers[j];
+                    if (flower.contains(arrow.x, arrow.y)) {
+                        createParticles(flower.x, flower.y, 330, 20); // Pink particles
+                        pinkFlowers.splice(j, 1);
+                        arrow.active = false;
+                        score += 15;
                         scoreDisplay.textContent = `Score: ${score}`;
                         break;
                     }
@@ -800,15 +900,21 @@
             score = 0;
             arrows = 10;
             hearts = [];
+            blueHearts = [];
             roses = [];
+            pinkFlowers = [];
             arrowPickups = [];
             flyingArrows = [];
             particles = [];
-            heartSpawnInterval = 2000;
+            heartSpawnInterval = 2500;
+            blueHeartSpawnInterval = 6000;
             roseSpawnInterval = 5000;
+            pinkFlowerSpawnInterval = 4000;
             bundleSpawnInterval = 4000;
             lastHeartSpawn = Date.now();
+            lastBlueHeartSpawn = Date.now();
             lastRoseSpawn = Date.now();
+            lastPinkFlowerSpawn = Date.now();
             lastBundleSpawn = Date.now();
 
             scoreDisplay.textContent = `Score: ${score}`;
@@ -845,10 +951,22 @@
                 lastHeartSpawn = now;
             }
 
+            // Spawn blue hearts (occasionally)
+            if (now - lastBlueHeartSpawn > blueHeartSpawnInterval) {
+                spawnBlueHeart();
+                lastBlueHeartSpawn = now;
+            }
+
             // Spawn roses (less frequently)
             if (now - lastRoseSpawn > roseSpawnInterval) {
                 spawnRose();
                 lastRoseSpawn = now;
+            }
+
+            // Spawn pink flowers
+            if (now - lastPinkFlowerSpawn > pinkFlowerSpawnInterval) {
+                spawnPinkFlower();
+                lastPinkFlowerSpawn = now;
             }
 
             // Spawn arrow bundles (occasionally)
@@ -864,10 +982,24 @@
                 return alive;
             });
 
+            // Update and draw blue hearts
+            blueHearts = blueHearts.filter(blueHeart => {
+                const alive = blueHeart.update();
+                if (alive) blueHeart.draw();
+                return alive;
+            });
+
             // Update and draw roses
             roses = roses.filter(rose => {
                 const alive = rose.update();
                 if (alive) rose.draw();
+                return alive;
+            });
+
+            // Update and draw pink flowers
+            pinkFlowers = pinkFlowers.filter(flower => {
+                const alive = flower.update();
+                if (alive) flower.draw();
                 return alive;
             });
 
