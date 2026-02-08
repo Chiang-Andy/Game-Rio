@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Arrow Game for Rio</title>
+    <title>Game for Rio</title>
     <style>
         * {
             margin: 0;
@@ -155,7 +155,7 @@
 
         <div id="startScreen">
             <div class="cupid-icon">💘</div>
-            <h1>Arrow Game for Rio</h1>
+            <h1>Game for Rio</h1>
             <p class="subtitle">this game is for whenever you get bored, enjoy my love</p>
             <button class="btn" id="startBtn">Play</button>
             <p class="instructions">
@@ -187,8 +187,10 @@
 
         let width, height;
         let score = 0;
-        let arrows = 10;
+        let arrows = 5;
         let hearts = [];
+        let roses = [];
+        let arrowBundles = [];
         let flyingArrows = [];
         let particles = [];
         let isAiming = false;
@@ -198,6 +200,10 @@
         let gameRunning = false;
         let lastHeartSpawn = 0;
         let heartSpawnInterval = 2000;
+        let lastRoseSpawn = 0;
+        let roseSpawnInterval = 5000;
+        let lastBundleSpawn = 0;
+        let bundleSpawnInterval = 8000;
 
         function resize() {
             width = window.innerWidth;
@@ -252,6 +258,171 @@
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
                 ctx.beginPath();
                 ctx.ellipse(-8, -8, 4, 3, -0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            contains(x, y) {
+                const dx = x - this.x;
+                const dy = y - this.y;
+                return Math.sqrt(dx * dx + dy * dy) < this.size;
+            }
+        }
+
+        class Rose {
+            constructor() {
+                this.size = 30 + Math.random() * 15;
+                this.x = Math.random() * (width - this.size * 2) + this.size;
+                this.y = -this.size;
+                this.speedY = 1 + Math.random() * 1;
+                this.speedX = (Math.random() - 0.5) * 1.5;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.03 + Math.random() * 0.02;
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.03;
+                this.points = 25;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * 0.8 + this.speedX;
+                this.rotation += this.rotationSpeed;
+
+                if (this.x < this.size) this.x = this.size;
+                if (this.x > width - this.size) this.x = width - this.size;
+
+                return this.y < height + this.size;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.scale(this.size / 35, this.size / 35);
+
+                // Stem
+                ctx.strokeStyle = '#228B22';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(0, 10);
+                ctx.quadraticCurveTo(5, 25, 0, 40);
+                ctx.stroke();
+
+                // Leaves
+                ctx.fillStyle = '#32CD32';
+                ctx.beginPath();
+                ctx.ellipse(-8, 25, 8, 4, -0.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(8, 30, 8, 4, 0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Rose petals
+                ctx.fillStyle = '#DC143C';
+                for (let i = 0; i < 5; i++) {
+                    ctx.save();
+                    ctx.rotate((i * Math.PI * 2) / 5);
+                    ctx.beginPath();
+                    ctx.ellipse(0, -8, 8, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // Center
+                ctx.fillStyle = '#8B0000';
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            contains(x, y) {
+                const dx = x - this.x;
+                const dy = y - this.y;
+                return Math.sqrt(dx * dx + dy * dy) < this.size;
+            }
+        }
+
+        class ArrowBundle {
+            constructor() {
+                this.size = 35;
+                this.x = Math.random() * (width - this.size * 2) + this.size;
+                this.y = -this.size;
+                this.speedY = 1.5 + Math.random() * 1;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.02;
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.04;
+                this.arrowsGiven = 3;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * 0.6 + this.speedX;
+                this.rotation += this.rotationSpeed;
+
+                if (this.x < this.size) this.x = this.size;
+                if (this.x > width - this.size) this.x = width - this.size;
+
+                return this.y < height + this.size;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+
+                // Draw 3 arrows bundled together
+                for (let i = -1; i <= 1; i++) {
+                    ctx.save();
+                    ctx.translate(i * 8, i * 3);
+                    ctx.rotate(i * 0.1);
+
+                    // Arrow shaft
+                    ctx.strokeStyle = '#8B4513';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(-20, 0);
+                    ctx.lineTo(15, 0);
+                    ctx.stroke();
+
+                    // Arrow head
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.moveTo(20, 0);
+                    ctx.lineTo(12, -5);
+                    ctx.lineTo(12, 5);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Feathers
+                    ctx.fillStyle = '#f8a5c2';
+                    ctx.beginPath();
+                    ctx.moveTo(-20, 0);
+                    ctx.lineTo(-12, -6);
+                    ctx.lineTo(-8, 0);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(-20, 0);
+                    ctx.lineTo(-12, 6);
+                    ctx.lineTo(-8, 0);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.restore();
+                }
+
+                // Ribbon tying them
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 6, 10, 0, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.restore();
@@ -473,11 +644,24 @@
             }
         }
 
+        function spawnRose() {
+            if (roses.length < 3) {
+                roses.push(new Rose());
+            }
+        }
+
+        function spawnArrowBundle() {
+            if (arrowBundles.length < 2) {
+                arrowBundles.push(new ArrowBundle());
+            }
+        }
+
         function checkCollisions() {
             for (let i = flyingArrows.length - 1; i >= 0; i--) {
                 const arrow = flyingArrows[i];
                 if (!arrow.active) continue;
 
+                // Check hearts
                 for (let j = hearts.length - 1; j >= 0; j--) {
                     const heart = hearts[j];
                     if (heart.contains(arrow.x, arrow.y)) {
@@ -486,9 +670,35 @@
                         arrow.active = false;
                         score += 10;
                         scoreDisplay.textContent = `Score: ${score}`;
-
-                        // Speed up spawning as score increases
                         heartSpawnInterval = Math.max(800, 2000 - score * 10);
+                        break;
+                    }
+                }
+                if (!arrow.active) continue;
+
+                // Check roses (more points!)
+                for (let j = roses.length - 1; j >= 0; j--) {
+                    const rose = roses[j];
+                    if (rose.contains(arrow.x, arrow.y)) {
+                        createParticles(rose.x, rose.y, 0, 25); // Red particles
+                        roses.splice(j, 1);
+                        arrow.active = false;
+                        score += 25;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        break;
+                    }
+                }
+                if (!arrow.active) continue;
+
+                // Check arrow bundles (get more arrows!)
+                for (let j = arrowBundles.length - 1; j >= 0; j--) {
+                    const bundle = arrowBundles[j];
+                    if (bundle.contains(arrow.x, arrow.y)) {
+                        createParticles(bundle.x, bundle.y, 45, 20); // Gold particles
+                        arrowBundles.splice(j, 1);
+                        arrow.active = false;
+                        arrows += 3;
+                        livesDisplay.textContent = `Arrows: ${arrows}`;
                         break;
                     }
                 }
@@ -537,12 +747,18 @@
 
         function startGame() {
             score = 0;
-            arrows = 10;
+            arrows = 5;
             hearts = [];
+            roses = [];
+            arrowBundles = [];
             flyingArrows = [];
             particles = [];
             heartSpawnInterval = 2000;
+            roseSpawnInterval = 5000;
+            bundleSpawnInterval = 8000;
             lastHeartSpawn = Date.now();
+            lastRoseSpawn = Date.now();
+            lastBundleSpawn = Date.now();
 
             scoreDisplay.textContent = `Score: ${score}`;
             livesDisplay.textContent = `Arrows: ${arrows}`;
@@ -566,17 +782,44 @@
 
             ctx.clearRect(0, 0, width, height);
 
-            // Spawn hearts
             const now = Date.now();
+
+            // Spawn hearts
             if (now - lastHeartSpawn > heartSpawnInterval) {
                 spawnHeart();
                 lastHeartSpawn = now;
+            }
+
+            // Spawn roses (less frequently)
+            if (now - lastRoseSpawn > roseSpawnInterval) {
+                spawnRose();
+                lastRoseSpawn = now;
+            }
+
+            // Spawn arrow bundles (occasionally)
+            if (now - lastBundleSpawn > bundleSpawnInterval) {
+                spawnArrowBundle();
+                lastBundleSpawn = now;
             }
 
             // Update and draw hearts
             hearts = hearts.filter(heart => {
                 const alive = heart.update();
                 if (alive) heart.draw();
+                return alive;
+            });
+
+            // Update and draw roses
+            roses = roses.filter(rose => {
+                const alive = rose.update();
+                if (alive) rose.draw();
+                return alive;
+            });
+
+            // Update and draw arrow bundles
+            arrowBundles = arrowBundles.filter(bundle => {
+                const alive = bundle.update();
+                if (alive) bundle.draw();
                 return alive;
             });
 
