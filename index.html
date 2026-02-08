@@ -210,7 +210,7 @@
             height = window.innerHeight;
             canvas.width = width;
             canvas.height = height;
-            bowPosition = { x: width / 2, y: height - 80 };
+            bowPosition = { x: width / 2, y: height - 150 };
         }
 
         window.addEventListener('resize', resize);
@@ -304,78 +304,64 @@
 
                 // Stem
                 ctx.strokeStyle = '#228B22';
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
                 ctx.beginPath();
-                ctx.moveTo(0, 15);
-                ctx.quadraticCurveTo(3, 30, 0, 45);
+                ctx.moveTo(0, 10);
+                ctx.quadraticCurveTo(5, 25, 2, 40);
                 ctx.stroke();
 
-                // Thorns
+                // Leaf on stem
+                ctx.fillStyle = '#32CD32';
                 ctx.beginPath();
-                ctx.moveTo(1, 25);
-                ctx.lineTo(5, 22);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(-1, 35);
-                ctx.lineTo(-5, 32);
-                ctx.stroke();
+                ctx.moveTo(2, 28);
+                ctx.quadraticCurveTo(18, 20, 20, 28);
+                ctx.quadraticCurveTo(18, 36, 2, 32);
+                ctx.fill();
 
-                // Leaves
+                // Sepals (green base of flower)
                 ctx.fillStyle = '#228B22';
                 ctx.beginPath();
-                ctx.moveTo(-2, 28);
-                ctx.quadraticCurveTo(-15, 20, -12, 28);
-                ctx.quadraticCurveTo(-8, 32, -2, 28);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(2, 38);
-                ctx.quadraticCurveTo(15, 32, 12, 38);
-                ctx.quadraticCurveTo(8, 42, 2, 38);
+                ctx.moveTo(-8, 8);
+                ctx.quadraticCurveTo(-5, -2, 0, 5);
+                ctx.quadraticCurveTo(5, -2, 8, 8);
+                ctx.quadraticCurveTo(0, 12, -8, 8);
                 ctx.fill();
 
-                // Outer petals (darker red)
-                ctx.fillStyle = '#C41E3A';
-                for (let i = 0; i < 5; i++) {
-                    ctx.save();
-                    ctx.rotate((i * Math.PI * 2) / 5 + 0.3);
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.quadraticCurveTo(-10, -15, 0, -18);
-                    ctx.quadraticCurveTo(10, -15, 0, 0);
-                    ctx.fill();
-                    ctx.restore();
-                }
-
-                // Middle petals (red)
+                // Rose bloom - outer petals
                 ctx.fillStyle = '#DC143C';
-                for (let i = 0; i < 5; i++) {
-                    ctx.save();
-                    ctx.rotate((i * Math.PI * 2) / 5);
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.quadraticCurveTo(-7, -10, 0, -13);
-                    ctx.quadraticCurveTo(7, -10, 0, 0);
-                    ctx.fill();
-                    ctx.restore();
-                }
+                ctx.beginPath();
+                ctx.moveTo(0, -18);
+                ctx.quadraticCurveTo(-18, -15, -15, 0);
+                ctx.quadraticCurveTo(-12, 8, 0, 5);
+                ctx.quadraticCurveTo(12, 8, 15, 0);
+                ctx.quadraticCurveTo(18, -15, 0, -18);
+                ctx.fill();
 
-                // Inner petals (lighter)
-                ctx.fillStyle = '#E34234';
-                for (let i = 0; i < 4; i++) {
-                    ctx.save();
-                    ctx.rotate((i * Math.PI * 2) / 4 + 0.4);
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.quadraticCurveTo(-4, -6, 0, -8);
-                    ctx.quadraticCurveTo(4, -6, 0, 0);
-                    ctx.fill();
-                    ctx.restore();
-                }
+                // Inner petals - spiral effect
+                ctx.fillStyle = '#B22222';
+                ctx.beginPath();
+                ctx.moveTo(0, -14);
+                ctx.quadraticCurveTo(-12, -10, -10, -2);
+                ctx.quadraticCurveTo(-6, 4, 0, 2);
+                ctx.quadraticCurveTo(6, 4, 10, -2);
+                ctx.quadraticCurveTo(12, -10, 0, -14);
+                ctx.fill();
 
-                // Center spiral
+                // Center swirl
                 ctx.fillStyle = '#8B0000';
                 ctx.beginPath();
-                ctx.arc(0, 0, 3, 0, Math.PI * 2);
+                ctx.moveTo(0, -10);
+                ctx.quadraticCurveTo(-6, -6, -5, -2);
+                ctx.quadraticCurveTo(-2, 1, 2, -1);
+                ctx.quadraticCurveTo(5, -4, 4, -8);
+                ctx.quadraticCurveTo(2, -11, 0, -10);
+                ctx.fill();
+
+                // Highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.ellipse(-5, -10, 3, 2, -0.5, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.restore();
@@ -598,7 +584,8 @@
             if (isAiming) {
                 const dx = aimEnd.x - bowPosition.x;
                 const dy = aimEnd.y - bowPosition.y;
-                drawAngle = Math.atan2(dy, dx);
+                // Point bow opposite to drag direction (drag down = aim up)
+                drawAngle = Math.atan2(-dy, -dx);
                 pullBack = Math.min(Math.sqrt(dx * dx + dy * dy), 100);
             }
 
