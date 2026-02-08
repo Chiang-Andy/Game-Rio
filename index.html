@@ -205,15 +205,15 @@
         let bowPosition = { x: 0, y: 0 };
         let gameRunning = false;
         let lastHeartSpawn = 0;
-        let heartSpawnInterval = 3500;
+        let heartSpawnInterval = 2800;
         let lastBlueHeartSpawn = 0;
-        let blueHeartSpawnInterval = 10000;
+        let blueHeartSpawnInterval = 8000;
         let lastRoseSpawn = 0;
-        let roseSpawnInterval = 8000;
+        let roseSpawnInterval = 6500;
         let lastPinkFlowerSpawn = 0;
-        let pinkFlowerSpawnInterval = 7000;
+        let pinkFlowerSpawnInterval = 5500;
         let lastBundleSpawn = 0;
-        let bundleSpawnInterval = 12000;
+        let bundleSpawnInterval = 9000;
 
         function resize() {
             width = window.innerWidth;
@@ -793,7 +793,7 @@
                         arrow.active = false;
                         score += 10;
                         scoreDisplay.textContent = `Score: ${score}`;
-                        heartSpawnInterval = Math.max(2000, 3500 - score * 5);
+                        heartSpawnInterval = Math.max(1800, 2800 - score * 5);
                         break;
                     }
                 }
@@ -906,11 +906,11 @@
             arrowPickups = [];
             flyingArrows = [];
             particles = [];
-            heartSpawnInterval = 3500;
-            blueHeartSpawnInterval = 10000;
-            roseSpawnInterval = 8000;
-            pinkFlowerSpawnInterval = 7000;
-            bundleSpawnInterval = 12000;
+            heartSpawnInterval = 2800;
+            blueHeartSpawnInterval = 8000;
+            roseSpawnInterval = 6500;
+            pinkFlowerSpawnInterval = 5500;
+            bundleSpawnInterval = 9000;
             lastHeartSpawn = Date.now();
             lastBlueHeartSpawn = Date.now();
             lastRoseSpawn = Date.now();
