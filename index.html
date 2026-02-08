@@ -146,6 +146,9 @@
     </style>
 </head>
 <body>
+    <audio id="bgMusic" loop>
+        <source src="Seycara  I See The World In Her Eyes.mp3" type="audio/mpeg">
+    </audio>
     <div id="gameContainer">
         <div id="header">
             <div id="score">Score: 0</div>
@@ -184,6 +187,7 @@
         const finalScoreDisplay = document.getElementById('finalScore');
         const startBtn = document.getElementById('startBtn');
         const restartBtn = document.getElementById('restartBtn');
+        const bgMusic = document.getElementById('bgMusic');
 
         let width, height;
         let score = 0;
@@ -657,7 +661,7 @@
             const dx = bowPosition.x - aimEnd.x;
             const dy = bowPosition.y - aimEnd.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const angle = Math.atan2(-dy, -dx);
+            const angle = Math.atan2(dy, dx);
 
             ctx.save();
             ctx.setLineDash([10, 10]);
@@ -760,7 +764,7 @@
             const distance = Math.sqrt(dx * dx + dy * dy);
 
             if (distance > 20) {
-                const angle = Math.atan2(-dy, -dx);
+                const angle = Math.atan2(dy, dx);
                 flyingArrows.push(new Arrow(bowPosition.x, bowPosition.y, angle, distance));
                 arrows--;
                 livesDisplay.textContent = `Arrows: ${arrows}`;
@@ -813,6 +817,10 @@
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
             gameRunning = true;
+
+            // Start background music
+            bgMusic.volume = 0.5;
+            bgMusic.play().catch(e => console.log('Audio play failed:', e));
 
             // Spawn initial hearts
             for (let i = 0; i < 3; i++) {
