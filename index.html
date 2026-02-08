@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Cupid's Arrow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ff9a9e 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+            touch-action: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        #score, #lives {
+            font-size: 1.2em;
+            color: #c44569;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        #gameCanvas {
+            display: block;
+            touch-action: none;
+        }
+
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 100;
+        }
+
+        #gameOverScreen {
+            display: none;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #c44569;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1em;
+            color: #f8a5c2;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff6b81 0%, #c44569 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(196, 69, 105, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'Georgia', serif;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(196, 69, 105, 0.4);
+        }
+
+        .instructions {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            padding: 0 20px;
+            line-height: 1.6;
+        }
+
+        #finalScore {
+            font-size: 3em;
+            color: #c44569;
+            margin: 20px 0;
+        }
+
+        .cupid-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        #aimLine {
+            position: absolute;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="header">
+            <div id="score">Score: 0</div>
+            <div id="lives">Arrows: 10</div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="startScreen">
+            <div class="cupid-icon">💘</div>
+            <h1>Cupid's Arrow</h1>
+            <p class="subtitle">Spread the love!</p>
+            <button class="btn" id="startBtn">Play</button>
+            <p class="instructions">
+                Tap and drag to aim<br>
+                Release to shoot arrows at hearts<br>
+                Don't let hearts escape!
+            </p>
+        </div>
+
+        <div id="gameOverScreen">
+            <div class="cupid-icon">💔</div>
+            <h1>Game Over</h1>
+            <p class="subtitle">Out of arrows!</p>
+            <div id="finalScore">0</div>
+            <button class="btn" id="restartBtn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+
+        let width, height;
+        let score = 0;
+        let arrows = 10;
+        let hearts = [];
+        let flyingArrows = [];
+        let particles = [];
+        let isAiming = false;
+        let aimStart = { x: 0, y: 0 };
+        let aimEnd = { x: 0, y: 0 };
+        let bowPosition = { x: 0, y: 0 };
+        let gameRunning = false;
+        let lastHeartSpawn = 0;
+        let heartSpawnInterval = 2000;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            bowPosition = { x: width / 2, y: height - 80 };
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Heart {
+            constructor() {
+                this.size = 25 + Math.random() * 20;
+                this.x = Math.random() * (width - this.size * 2) + this.size;
+                this.y = -this.size;
+                this.speedY = 0.5 + Math.random() * 1.5;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.02 + Math.random() * 0.03;
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+                this.hue = 340 + Math.random() * 30;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * 0.5 + this.speedX;
+                this.rotation += this.rotationSpeed;
+
+                if (this.x < this.size) this.x = this.size;
+                if (this.x > width - this.size) this.x = width - this.size;
+
+                return this.y < height + this.size;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.scale(this.size / 30, this.size / 30);
+
+                ctx.fillStyle = `hsl(${this.hue}, 80%, 60%)`;
+                ctx.beginPath();
+                ctx.moveTo(0, -10);
+                ctx.bezierCurveTo(-15, -25, -30, -5, 0, 20);
+                ctx.bezierCurveTo(30, -5, 15, -25, 0, -10);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.ellipse(-8, -8, 4, 3, -0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            contains(x, y) {
+                const dx = x - this.x;
+                const dy = y - this.y;
+                return Math.sqrt(dx * dx + dy * dy) < this.size;
+            }
+        }
+
+        class Arrow {
+            constructor(x, y, angle, power) {
+                this.x = x;
+                this.y = y;
+                this.angle = angle;
+                this.speed = Math.min(power * 0.15, 20);
+                this.vx = Math.cos(angle) * this.speed;
+                this.vy = Math.sin(angle) * this.speed;
+                this.length = 40;
+                this.active = true;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.1; // gravity
+                this.angle = Math.atan2(this.vy, this.vx);
+
+                return this.x > -50 && this.x < width + 50 && this.y < height + 50;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                // Arrow shaft
+                ctx.strokeStyle = '#8B4513';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-this.length, 0);
+                ctx.lineTo(10, 0);
+                ctx.stroke();
+
+                // Arrow head
+                ctx.fillStyle = '#c44569';
+                ctx.beginPath();
+                ctx.moveTo(15, 0);
+                ctx.lineTo(5, -6);
+                ctx.lineTo(5, 6);
+                ctx.closePath();
+                ctx.fill();
+
+                // Feathers
+                ctx.fillStyle = '#f8a5c2';
+                ctx.beginPath();
+                ctx.moveTo(-this.length, 0);
+                ctx.lineTo(-this.length + 10, -8);
+                ctx.lineTo(-this.length + 15, 0);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(-this.length, 0);
+                ctx.lineTo(-this.length + 10, 8);
+                ctx.lineTo(-this.length + 15, 0);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, hue) {
+                this.x = x;
+                this.y = y;
+                this.size = 3 + Math.random() * 5;
+                this.speedX = (Math.random() - 0.5) * 8;
+                this.speedY = (Math.random() - 0.5) * 8;
+                this.hue = hue;
+                this.life = 1;
+                this.decay = 0.02 + Math.random() * 0.02;
+                this.isHeart = Math.random() > 0.5;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += 0.1;
+                this.life -= this.decay;
+                return this.life > 0;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = `hsl(${this.hue}, 80%, 60%)`;
+
+                if (this.isHeart) {
+                    ctx.translate(this.x, this.y);
+                    ctx.scale(this.size / 15, this.size / 15);
+                    ctx.beginPath();
+                    ctx.moveTo(0, -5);
+                    ctx.bezierCurveTo(-7, -12, -15, -2, 0, 10);
+                    ctx.bezierCurveTo(15, -2, 7, -12, 0, -5);
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        function createParticles(x, y, hue, count = 15) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, hue));
+            }
+        }
+
+        function drawBow() {
+            ctx.save();
+            ctx.translate(bowPosition.x, bowPosition.y);
+
+            let drawAngle = -Math.PI / 2;
+            let pullBack = 0;
+
+            if (isAiming) {
+                const dx = aimEnd.x - bowPosition.x;
+                const dy = aimEnd.y - bowPosition.y;
+                drawAngle = Math.atan2(dy, dx);
+                pullBack = Math.min(Math.sqrt(dx * dx + dy * dy), 100);
+            }
+
+            ctx.rotate(drawAngle + Math.PI / 2);
+
+            // Bow
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.arc(0, 0, 35, Math.PI * 0.2, Math.PI * 0.8);
+            ctx.stroke();
+
+            // Bow string
+            ctx.strokeStyle = '#f5f5dc';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const stringPull = pullBack * 0.3;
+            ctx.moveTo(-35 * Math.sin(Math.PI * 0.3), 35 * Math.cos(Math.PI * 0.3));
+            ctx.lineTo(0, -stringPull);
+            ctx.lineTo(35 * Math.sin(Math.PI * 0.3), 35 * Math.cos(Math.PI * 0.3));
+            ctx.stroke();
+
+            // Arrow on bow when aiming
+            if (isAiming && pullBack > 10) {
+                ctx.rotate(-Math.PI / 2);
+                ctx.strokeStyle = '#8B4513';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-stringPull - 30, 0);
+                ctx.lineTo(-stringPull + 10, 0);
+                ctx.stroke();
+
+                ctx.fillStyle = '#c44569';
+                ctx.beginPath();
+                ctx.moveTo(-stringPull + 15, 0);
+                ctx.lineTo(-stringPull + 5, -5);
+                ctx.lineTo(-stringPull + 5, 5);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function drawAimLine() {
+            if (!isAiming) return;
+
+            const dx = bowPosition.x - aimEnd.x;
+            const dy = bowPosition.y - aimEnd.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(-dy, -dx);
+
+            ctx.save();
+            ctx.setLineDash([10, 10]);
+            ctx.strokeStyle = 'rgba(196, 69, 105, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(bowPosition.x, bowPosition.y);
+
+            // Draw trajectory preview
+            const power = Math.min(distance * 0.15, 20);
+            let px = bowPosition.x;
+            let py = bowPosition.y;
+            let vx = Math.cos(angle) * power;
+            let vy = Math.sin(angle) * power;
+
+            for (let i = 0; i < 20; i++) {
+                px += vx * 3;
+                py += vy * 3;
+                vy += 0.3;
+                ctx.lineTo(px, py);
+                if (py > height) break;
+            }
+
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function spawnHeart() {
+            if (hearts.length < 8) {
+                hearts.push(new Heart());
+            }
+        }
+
+        function checkCollisions() {
+            for (let i = flyingArrows.length - 1; i >= 0; i--) {
+                const arrow = flyingArrows[i];
+                if (!arrow.active) continue;
+
+                for (let j = hearts.length - 1; j >= 0; j--) {
+                    const heart = hearts[j];
+                    if (heart.contains(arrow.x, arrow.y)) {
+                        createParticles(heart.x, heart.y, heart.hue, 20);
+                        hearts.splice(j, 1);
+                        arrow.active = false;
+                        score += 10;
+                        scoreDisplay.textContent = `Score: ${score}`;
+
+                        // Speed up spawning as score increases
+                        heartSpawnInterval = Math.max(800, 2000 - score * 10);
+                        break;
+                    }
+                }
+            }
+        }
+
+        function shootArrow() {
+            if (arrows <= 0) return;
+
+            const dx = bowPosition.x - aimEnd.x;
+            const dy = bowPosition.y - aimEnd.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 20) {
+                const angle = Math.atan2(-dy, -dx);
+                flyingArrows.push(new Arrow(bowPosition.x, bowPosition.y, angle, distance));
+                arrows--;
+                livesDisplay.textContent = `Arrows: ${arrows}`;
+
+                if (arrows <= 0) {
+                    setTimeout(endGame, 500);
+                }
+            }
+        }
+
+        function endGame() {
+            gameRunning = false;
+            finalScoreDisplay.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function startGame() {
+            score = 0;
+            arrows = 10;
+            hearts = [];
+            flyingArrows = [];
+            particles = [];
+            heartSpawnInterval = 2000;
+            lastHeartSpawn = Date.now();
+
+            scoreDisplay.textContent = `Score: ${score}`;
+            livesDisplay.textContent = `Arrows: ${arrows}`;
+
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            gameRunning = true;
+
+            // Spawn initial hearts
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    if (gameRunning) spawnHeart();
+                }, i * 500);
+            }
+
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Spawn hearts
+            const now = Date.now();
+            if (now - lastHeartSpawn > heartSpawnInterval) {
+                spawnHeart();
+                lastHeartSpawn = now;
+            }
+
+            // Update and draw hearts
+            hearts = hearts.filter(heart => {
+                const alive = heart.update();
+                if (alive) heart.draw();
+                return alive;
+            });
+
+            // Update and draw arrows
+            flyingArrows = flyingArrows.filter(arrow => {
+                const alive = arrow.update();
+                if (alive && arrow.active) arrow.draw();
+                return alive && arrow.active;
+            });
+
+            // Update and draw particles
+            particles = particles.filter(particle => {
+                const alive = particle.update();
+                if (alive) particle.draw();
+                return alive;
+            });
+
+            checkCollisions();
+            drawAimLine();
+            drawBow();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Input handlers
+        function getInputPos(e) {
+            if (e.touches) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function handleStart(e) {
+            if (!gameRunning) return;
+            e.preventDefault();
+            const pos = getInputPos(e);
+            isAiming = true;
+            aimStart = pos;
+            aimEnd = pos;
+        }
+
+        function handleMove(e) {
+            if (!gameRunning || !isAiming) return;
+            e.preventDefault();
+            aimEnd = getInputPos(e);
+        }
+
+        function handleEnd(e) {
+            if (!gameRunning || !isAiming) return;
+            e.preventDefault();
+            shootArrow();
+            isAiming = false;
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('mouseleave', handleEnd);
+
+        canvas.addEventListener('touchstart', handleStart, { passive: false });
+        canvas.addEventListener('touchmove', handleMove, { passive: false });
+        canvas.addEventListener('touchend', handleEnd, { passive: false });
+        canvas.addEventListener('touchcancel', handleEnd, { passive: false });
+
+        startBtn.addEventListener('click', startGame);
+        startBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            startGame();
+        });
+
+        restartBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            startGame();
+        });
+
+        // Prevent scrolling on mobile
+        document.body.addEventListener('touchmove', (e) => {
+            if (gameRunning) e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
