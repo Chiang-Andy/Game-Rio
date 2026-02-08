@@ -143,6 +143,25 @@
             position: absolute;
             pointer-events: none;
         }
+
+        #musicBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.8);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #musicBtn:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -176,6 +195,7 @@
             <button class="btn" id="restartBtn">Play Again</button>
         </div>
     </div>
+    <button id="musicBtn">🔊</button>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -188,6 +208,8 @@
         const startBtn = document.getElementById('startBtn');
         const restartBtn = document.getElementById('restartBtn');
         const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        let musicOn = true;
 
         let width, height;
         let score = 0;
@@ -214,6 +236,8 @@
         let pinkFlowerSpawnInterval = 5500;
         let lastBundleSpawn = 0;
         let bundleSpawnInterval = 7000;
+        let lastFrameTime = 0;
+        let deltaTime = 0;
 
         function resize() {
             width = window.innerWidth;
@@ -231,8 +255,8 @@
                 this.size = 25 + Math.random() * 20;
                 this.x = Math.random() * (width - this.size * 2) + this.size;
                 this.y = -this.size;
-                this.speedY = 0.5 + Math.random() * 1.5;
-                this.speedX = (Math.random() - 0.5) * 2;
+                this.speedY = 30 + Math.random() * 50;
+                this.speedX = (Math.random() - 0.5) * 60;
                 this.wobble = Math.random() * Math.PI * 2;
                 this.wobbleSpeed = 0.02 + Math.random() * 0.03;
                 this.rotation = 0;
@@ -241,9 +265,9 @@
             }
 
             update() {
-                this.y += this.speedY;
+                this.y += this.speedY * deltaTime;
                 this.wobble += this.wobbleSpeed;
-                this.x += Math.sin(this.wobble) * 0.5 + this.speedX;
+                this.x += (Math.sin(this.wobble) * 20 + this.speedX) * deltaTime;
                 this.rotation += this.rotationSpeed;
 
                 if (this.x < this.size) this.x = this.size;
@@ -285,8 +309,8 @@
                 this.size = 30 + Math.random() * 15;
                 this.x = Math.random() * (width - this.size * 2) + this.size;
                 this.y = -this.size;
-                this.speedY = 0.8 + Math.random() * 1;
-                this.speedX = (Math.random() - 0.5) * 1.5;
+                this.speedY = 40 + Math.random() * 40;
+                this.speedX = (Math.random() - 0.5) * 50;
                 this.wobble = Math.random() * Math.PI * 2;
                 this.wobbleSpeed = 0.025 + Math.random() * 0.02;
                 this.rotation = 0;
@@ -296,9 +320,9 @@
             }
 
             update() {
-                this.y += this.speedY;
+                this.y += this.speedY * deltaTime;
                 this.wobble += this.wobbleSpeed;
-                this.x += Math.sin(this.wobble) * 0.6 + this.speedX;
+                this.x += (Math.sin(this.wobble) * 20 + this.speedX) * deltaTime;
                 this.rotation += this.rotationSpeed;
                 this.glow += 0.1;
 
@@ -357,8 +381,8 @@
                 this.size = 30 + Math.random() * 15;
                 this.x = Math.random() * (width - this.size * 2) + this.size;
                 this.y = -this.size;
-                this.speedY = 1 + Math.random() * 1;
-                this.speedX = (Math.random() - 0.5) * 1.5;
+                this.speedY = 45 + Math.random() * 45;
+                this.speedX = (Math.random() - 0.5) * 50;
                 this.wobble = Math.random() * Math.PI * 2;
                 this.wobbleSpeed = 0.03 + Math.random() * 0.02;
                 this.rotation = 0;
@@ -367,9 +391,9 @@
             }
 
             update() {
-                this.y += this.speedY;
+                this.y += this.speedY * deltaTime;
                 this.wobble += this.wobbleSpeed;
-                this.x += Math.sin(this.wobble) * 0.8 + this.speedX;
+                this.x += (Math.sin(this.wobble) * 25 + this.speedX) * deltaTime;
                 this.rotation += this.rotationSpeed;
 
                 if (this.x < this.size) this.x = this.size;
@@ -401,8 +425,8 @@
                 this.size = 28 + Math.random() * 12;
                 this.x = Math.random() * (width - this.size * 2) + this.size;
                 this.y = -this.size;
-                this.speedY = 0.8 + Math.random() * 1;
-                this.speedX = (Math.random() - 0.5) * 1.2;
+                this.speedY = 35 + Math.random() * 45;
+                this.speedX = (Math.random() - 0.5) * 40;
                 this.wobble = Math.random() * Math.PI * 2;
                 this.wobbleSpeed = 0.025 + Math.random() * 0.02;
                 this.rotation = 0;
@@ -411,9 +435,9 @@
             }
 
             update() {
-                this.y += this.speedY;
+                this.y += this.speedY * deltaTime;
                 this.wobble += this.wobbleSpeed;
-                this.x += Math.sin(this.wobble) * 0.5 + this.speedX;
+                this.x += (Math.sin(this.wobble) * 15 + this.speedX) * deltaTime;
                 this.rotation += this.rotationSpeed;
 
                 if (this.x < this.size) this.x = this.size;
@@ -445,8 +469,8 @@
                 this.size = 30;
                 this.x = Math.random() * (width - this.size * 2) + this.size;
                 this.y = -this.size;
-                this.speedY = 1.2 + Math.random() * 0.8;
-                this.speedX = (Math.random() - 0.5) * 1.5;
+                this.speedY = 50 + Math.random() * 40;
+                this.speedX = (Math.random() - 0.5) * 50;
                 this.wobble = Math.random() * Math.PI * 2;
                 this.wobbleSpeed = 0.02;
                 this.rotation = Math.random() * Math.PI * 2;
@@ -455,9 +479,9 @@
             }
 
             update() {
-                this.y += this.speedY;
+                this.y += this.speedY * deltaTime;
                 this.wobble += this.wobbleSpeed;
-                this.x += Math.sin(this.wobble) * 0.5 + this.speedX;
+                this.x += (Math.sin(this.wobble) * 15 + this.speedX) * deltaTime;
                 this.rotation += this.rotationSpeed;
 
                 if (this.x < this.size) this.x = this.size;
@@ -886,6 +910,7 @@
             lastRoseSpawn = Date.now();
             lastPinkFlowerSpawn = Date.now();
             lastBundleSpawn = Date.now();
+            lastFrameTime = 0;
 
             scoreDisplay.textContent = `Score: ${score}`;
             livesDisplay.textContent = `Arrows: ${arrows}`;
@@ -908,8 +933,13 @@
             gameLoop();
         }
 
-        function gameLoop() {
+        function gameLoop(timestamp) {
             if (!gameRunning) return;
+
+            // Calculate delta time (in seconds)
+            if (!lastFrameTime) lastFrameTime = timestamp;
+            deltaTime = Math.min((timestamp - lastFrameTime) / 1000, 0.1);
+            lastFrameTime = timestamp;
 
             ctx.clearRect(0, 0, width, height);
 
@@ -1051,6 +1081,18 @@
         restartBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
             startGame();
+        });
+
+        // Music toggle button
+        musicBtn.addEventListener('click', () => {
+            musicOn = !musicOn;
+            if (musicOn) {
+                bgMusic.play();
+                musicBtn.textContent = '🔊';
+            } else {
+                bgMusic.pause();
+                musicBtn.textContent = '🔇';
+            }
         });
 
         // Prevent scrolling on mobile
