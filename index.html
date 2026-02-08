@@ -213,7 +213,7 @@
         let lastPinkFlowerSpawn = 0;
         let pinkFlowerSpawnInterval = 5500;
         let lastBundleSpawn = 0;
-        let bundleSpawnInterval = 9000;
+        let bundleSpawnInterval = 7000;
 
         function resize() {
             width = window.innerWidth;
@@ -469,49 +469,19 @@
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
 
-                // Glow effect
-                ctx.shadowColor = '#FFD700';
-                ctx.shadowBlur = 15;
+                // Bow and arrow emoji
+                ctx.font = `${this.size * 1.8}px serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🏹', 0, 0);
 
-                // Arrow shaft (golden)
-                ctx.strokeStyle = '#DAA520';
-                ctx.lineWidth = 4;
+                // +3 indicator with background
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                 ctx.beginPath();
-                ctx.moveTo(-25, 0);
-                ctx.lineTo(15, 0);
-                ctx.stroke();
-
-                ctx.shadowBlur = 0;
-
-                // Arrow head (gold)
-                ctx.fillStyle = '#FFD700';
-                ctx.beginPath();
-                ctx.moveTo(22, 0);
-                ctx.lineTo(12, -7);
-                ctx.lineTo(14, 0);
-                ctx.lineTo(12, 7);
-                ctx.closePath();
+                ctx.arc(12, -15, 12, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Feathers (white/gold)
-                ctx.fillStyle = '#FFF8DC';
-                ctx.beginPath();
-                ctx.moveTo(-25, 0);
-                ctx.lineTo(-15, -8);
-                ctx.lineTo(-10, 0);
-                ctx.closePath();
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.moveTo(-25, 0);
-                ctx.lineTo(-15, 8);
-                ctx.lineTo(-10, 0);
-                ctx.closePath();
-                ctx.fill();
-
-                // +3 indicator
                 ctx.fillStyle = '#FFD700';
                 ctx.font = 'bold 14px Georgia';
                 ctx.textAlign = 'center';
@@ -910,7 +880,7 @@
             blueHeartSpawnInterval = 8000;
             roseSpawnInterval = 6500;
             pinkFlowerSpawnInterval = 5500;
-            bundleSpawnInterval = 9000;
+            bundleSpawnInterval = 7000;
             lastHeartSpawn = Date.now();
             lastBlueHeartSpawn = Date.now();
             lastRoseSpawn = Date.now();
