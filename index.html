@@ -69,9 +69,9 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: transparent;
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
             z-index: 100;
         }
 
@@ -81,14 +81,15 @@
 
         h1 {
             font-size: 2.5em;
-            color: #c44569;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            color: #fff;
+            text-shadow: 0 2px 15px rgba(196, 69, 105, 0.8), 0 0 30px rgba(196, 69, 105, 0.5);
             margin-bottom: 10px;
         }
 
         .subtitle {
             font-size: 1em;
-            color: #f8a5c2;
+            color: #fff;
+            text-shadow: 0 1px 10px rgba(196, 69, 105, 0.8);
             margin-bottom: 30px;
         }
 
@@ -113,21 +114,24 @@
         .instructions {
             margin-top: 30px;
             text-align: center;
-            color: #666;
+            color: #fff;
             font-size: 0.9em;
             padding: 0 20px;
             line-height: 1.6;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
         }
 
         #finalScore {
             font-size: 3em;
-            color: #c44569;
+            color: #fff;
+            text-shadow: 0 2px 15px rgba(196, 69, 105, 0.8);
             margin: 20px 0;
         }
 
         .cupid-icon {
             font-size: 4em;
             margin-bottom: 20px;
+            filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.3));
         }
 
         #aimLine {
