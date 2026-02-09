@@ -864,7 +864,9 @@
                 livesDisplay.textContent = `Arrows: ${arrows}`;
 
                 if (arrows <= 0) {
-                    setTimeout(endGame, 500);
+                    setTimeout(() => {
+                        if (arrows <= 0) endGame();
+                    }, 500);
                 }
             }
         }
